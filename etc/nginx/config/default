@@ -1,0 +1,53 @@
+server {
+    listen 80;
+    listen [::]:80 ipv6only=on;
+
+    root /var/www/public;
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php$is_args$args;
+    }
+
+    location ~ \.php$ {
+        try_files $uri /index.php =404;
+        fastcgi_pass fpm:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+
+        ##fastcgi_param PHP_VALUE "xdebug.remote_autostart=1 xdebug.remote_enable=1 xdebug.remote_host=fpm";
+
+        ## Wide-open CORS config for nginx
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'POST, PUT, DELETE, OPTIONS, HEAD, GET';
+            add_header 'Access-Control-Allow-Headers' 'Content-type, Origin, Accept, Authorization, X-Header-Organization-Id,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,,Content-Range,Range';
+            add_header 'Access-Control-Max-Age' 1728000;
+            return 204;
+        }
+    }
+
+    location ~ /\.ht {
+           deny all;
+    }
+
+    fastcgi_buffers 8 16k;
+    fastcgi_buffer_size 32k;
+    fastcgi_connect_timeout 300;
+    fastcgi_send_timeout 300;
+    fastcgi_read_timeout 300;
+
+    #add this begin
+    large_client_header_buffers 4 16k;
+    client_max_body_size 300m;
+    client_body_buffer_size 128k;
+    proxy_connect_timeout 600;
+    proxy_read_timeout 600;
+    proxy_send_timeout 600;
+    proxy_buffer_size 64k;
+    proxy_buffers 4 32k;
+    proxy_busy_buffers_size 64k;
+    proxy_temp_file_write_size 64k;
+    #add this end
+}

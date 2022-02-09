@@ -1,0 +1,47 @@
+version: '3'
+services:
+  db:
+    build: ./etc/postgres
+    restart: always
+    links:
+      - fpm
+    ports:
+      - "25433:5432"
+    env_file: .env
+    volumes:
+      - ./etc/postgres/sql/:/sql/
+      - ./etc/postgres/script/:/docker-entrypoint-initdb.d/
+    working_dir: /var/www
+  beanstalkd:
+    build: ./etc/beanstalkd
+    restart: always
+  fpm:
+    build: ./etc/php
+#    restart: always
+    env_file: .env
+    expose:
+      - "9000"
+    volumes:
+      - ./:/var/www
+    working_dir: /var/www
+  web:
+    build: ./etc/nginx
+#    restart: always
+    links:
+      - fpm
+    ports:
+      - "9393:80"
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www/
+  filebeat:
+    build: ./etc/filebeat
+#    restart: always
+    volumes:
+      - ./:/var/www
+      - /var/run/docker.sock:/tmp/docker.sock
+    env_file: .env
+networks:
+  default:
+    driver: "bridge"
+
